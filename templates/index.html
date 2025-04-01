@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple URL Shortener</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    form { margin-bottom: 1rem; }
+    label { display: block; margin-top: 0.5rem; }
+    input { padding: 0.3rem; width: 300px; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    #result { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>URL Shortener</h1>
+  <form id="shortenForm">
+    <label for="original_url">Original URL:</label>
+    <input type="text" id="original_url" name="original_url" required>
+
+    <label for="custom_alias">Custom Alias (optional):</label>
+    <input type="text" id="custom_alias" name="custom_alias">
+
+    <label for="expires_at">Expires At (YYYY-MM-DD HH:MM) (optional):</label>
+    <input type="text" id="expires_at" name="expires_at">
+
+    <button type="submit">Shorten URL</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    document.getElementById("shortenForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const original_url = document.getElementById("original_url").value;
+      const custom_alias = document.getElementById("custom_alias").value;
+      const expires_at = document.getElementById("expires_at").value;
+
+      // Build the payload. Only include optional fields if they have a value.
+      const payload = { original_url };
+      if(custom_alias.trim() !== "") payload.custom_alias = custom_alias;
+      if(expires_at.trim() !== "") payload.expires_at = expires_at;
+
+      try {
+        const response = await fetch("/links/shorten", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const resultDiv = document.getElementById("result");
+        if(response.ok) {
+          const data = await response.json();
+          resultDiv.innerHTML = `<p>Short URL: <a href="/links/${data.short_code}" target="_blank">/links/${data.short_code}</a></p>`;
+        } else {
+          const error = await response.json();
+          resultDiv.innerHTML = `<p style="color:red;">Error: ${error.detail}</p>`;
+        }
+      } catch (err) {
+        document.getElementById("result").innerHTML = `<p style="color:red;">Fetch error: ${err}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
